@@ -1,0 +1,209 @@
+<x-app-layout>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #0b0c10; 
+            color: #e2e8f0;
+        }
+        .mvs-card { 
+            background: #151921; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+        }
+        .mvs-gold { color: #c5a043; }
+        .btn-primary {
+            background: #c5a043;
+            color: #000;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover {
+            background: #d4b465;
+            transform: translateY(-1px);
+        }
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.70rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+    </style>
+
+    <div class="min-h-screen pb-12">
+        <div class="bg-[#151921] border-b border-white/5 py-5 mb-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold tracking-tight text-white italic uppercase">Admin <span class="mvs-gold">Panel</span></h2>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                            <p class="text-slate-500 text-[9px] font-bold tracking-widest uppercase">Riyadh Central Vault (SAR)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <a href="{{ route('admin.addCash') }}" class="btn-primary px-4 py-2 rounded-lg text-[10px] uppercase shadow-lg shadow-yellow-900/10">+ Add Vault Cash</a>
+                        <a href="{{ route('admin.assignList') }}" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-[10px] font-bold border border-white/10 transition-all uppercase">Assign Staff</a>
+                        <a href="{{ route('admin.projects.index') }}" class="bg-[#c5a043]/10 hover:bg-[#c5a043]/20 text-[#c5a043] px-4 py-2 rounded-lg text-[10px] font-black border border-[#c5a043]/20 transition-all uppercase italic">
+        📁 Manage Projects
+    </a>
+                        <a href="{{ route('admin.ledger') }}" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-[10px] font-bold border border-white/10 transition-all uppercase">Full Ledger Report</a>
+                        <a href="{{ route('admin.users.index') }}" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-[10px] font-bold border border-white/10 transition-all uppercase">Manage Staff</a>
+                        <a href="{{ route('admin.staffBalances') }}" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-[10px] font-bold border border-white/10 transition-all uppercase">Staff Balances</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            @if(session('error'))
+                <div class="mb-6 animate-bounce">
+                    <div class="bg-rose-500/10 border border-rose-500/20 text-rose-500 px-4 py-3 rounded-xl flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="text-[10px] font-black uppercase tracking-[0.1em]">{{ session('error') }}</span>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Master Vault Card --}}
+            <div class="mvs-card p-8 mb-8 relative overflow-hidden bg-gradient-to-br from-[#1a1f29] to-[#151921]">
+                <div class="absolute right-6 top-1/2 -translate-y-1/2 opacity-10">
+                    <img src="{{ asset('images/mvs-logo.png') }}" class="h-24 grayscale brightness-200">
+                </div>
+                <div class="relative z-10">
+                    <p class="stat-label mb-3">Master Vault Liquidity</p>
+                    <div class="flex items-baseline gap-3">
+                        <span class="text-slate-500 text-xl font-black italic">SAR</span>
+                        <h1 class="text-4xl md:text-5xl font-black tracking-tighter text-white italic">
+                            @php $vault = \App\Models\Vault::first(); @endphp
+                            {{ number_format($vault->total_balance ?? 0, 2) }}
+                        </h1>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Quick Stats --}}
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                @php
+                    $stats = [
+                        ['label' => 'Awaiting Manager', 'val' => $expenses->where('status', 'pending_manager')->count(), 'unit' => '', 'color' => 'text-amber-500'],
+                        ['label' => 'Pending Admin', 'val' => $expenses->where('status', 'pending_admin')->count(), 'unit' => '', 'color' => 'mvs-gold'],
+                        ['label' => 'Total Outflow', 'val' => number_format($expenses->where('status', 'approved')->where('type', 'assignment')->sum('amount'), 0), 'unit' => 'SAR', 'color' => 'text-rose-500'],
+                        ['label' => 'System Rejections', 'val' => $expenses->where('status', 'rejected')->count(), 'unit' => '', 'color' => 'text-slate-400'],
+                    ];
+                @endphp
+                @foreach($stats as $stat)
+                <div class="mvs-card p-5 bg-white/[0.01]">
+                    <p class="stat-label mb-2">{{ $stat['label'] }}</p>
+                    <div class="flex items-baseline gap-1">
+                        @if($stat['unit']) <span class="text-[10px] font-bold {{ $stat['color'] }} opacity-70">{{ $stat['unit'] }}</span> @endif
+                        <h3 class="text-lg font-extrabold {{ $stat['color'] }}">{{ $stat['val'] }}</h3>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {{-- Queue Table --}}
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="mvs-card overflow-hidden">
+                        <div class="px-6 py-5 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                            <h3 class="font-bold text-[11px] uppercase tracking-[0.2em] text-white italic">Final Settlement Queue</h3>
+                            <span class="bg-blue-500/10 text-blue-400 text-[9px] px-3 py-1 rounded-full font-black border border-blue-500/20 uppercase">
+                                {{ $expenses->where('status', 'pending_admin')->count() }} to process
+                            </span>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-black/30 text-[9px] uppercase text-slate-500 font-bold tracking-widest border-b border-white/5">
+                                    <tr>
+                                        <th class="px-6 py-4">Date & Details</th>
+                                        <th class="px-6 py-4">Staff Details</th>
+                                        <th class="px-6 py-4 text-right">Amount</th>
+                                        <th class="px-6 py-4 text-center">Receipt</th>
+                                        <th class="px-6 py-4 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/5">
+                                    @forelse($expenses->where('status', 'pending_admin') as $e)
+                                        <tr class="hover:bg-white/[0.03] transition-colors group">
+                                            <td class="px-6 py-4">
+                                                <div class="text-[11px] font-black text-white italic">{{ $e->transaction_date }}</div>
+                                                <div class="text-[9px] font-bold text-[#c5a043] uppercase tracking-tighter mt-0.5">{{ $e->description }}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-[12px] font-bold text-white group-hover:mvs-gold transition-colors">{{ $e->user->name ?? 'Unknown' }}</div>
+                                                <p class="text-[9px] font-black uppercase tracking-tight {{ $e->user->cash_balance < $e->amount ? 'text-rose-500 animate-pulse' : 'text-emerald-500/50' }}">
+                                                    Wallet: SAR {{ number_format($e->user->cash_balance, 2) }}
+                                                </p>
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <span class="text-[13px] font-black text-white italic">SAR {{ number_format($e->amount, 2) }}</span>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                @if($e->receipt_path)
+                                                    <a href="{{ asset('storage/' . $e->receipt_path) }}" target="_blank" class="text-[#c5a043] font-black border-b border-[#c5a043]/30 text-[9px] hover:text-white transition-all uppercase">View Receipt</a>
+                                                @else
+                                                    <span class="text-slate-700 text-[9px] font-bold uppercase italic">No File</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <div class="flex justify-end gap-2">
+                                                    <form action="{{ route('admin.expense.finalize', $e->id) }}" method="POST">
+                                                        @csrf
+                                                        <button class="bg-white text-black px-4 py-2 rounded-lg text-[9px] font-black uppercase hover:bg-emerald-500 hover:text-white transition-all shadow-lg {{ $e->user->cash_balance < $e->amount ? 'opacity-50 cursor-not-allowed' : '' }}">Settle</button>
+                                                    </form>
+                                                    <form action="{{ route('admin.reject', $e->id) }}" method="POST">
+                                                        @csrf
+                                                        <button class="text-rose-500 border border-rose-500/20 px-4 py-2 rounded-lg text-[9px] font-black uppercase hover:bg-rose-500 hover:text-white transition-all">Reject</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="px-6 py-20 text-center text-slate-700 text-[10px] font-bold uppercase tracking-widest italic">No requests awaiting final settlement</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Side Audit Log --}}
+                <div class="space-y-4">
+                    <h3 class="px-2 font-bold text-[10px] uppercase tracking-[0.3em] text-slate-500 italic">Financial Audit Log</h3>
+                    <div class="mvs-card p-5 space-y-5">
+                        @foreach($expenses->whereIn('status', ['approved', 'rejected'])->sortByDesc('updated_at')->take(6) as $history)
+                        <div class="flex items-start justify-between pb-5 border-b border-white/5 last:border-0 last:pb-0">
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <div class="w-1.5 h-1.5 rounded-full {{ $history->status == 'approved' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-rose-500' }}"></div>
+                                    <p class="text-xs font-bold text-white tracking-tight">{{ $history->user->name ?? 'User' }}</p>
+                                </div>
+                                <p class="text-[9px] text-slate-400 font-black uppercase tracking-tighter">{{ Str::limit($history->description, 20) }}</p>
+                                <p class="text-[8px] text-slate-600 mt-1 uppercase font-medium">{{ $history->updated_at->diffForHumans() }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs font-black italic {{ $history->status == 'approved' ? 'text-white' : 'text-slate-600 line-through' }}">
+                                    SAR {{ number_format($history->amount, 0) }}
+                                </p>
+                                <span class="text-[8px] font-black uppercase tracking-tighter {{ $history->status == 'approved' ? 'text-emerald-500' : 'text-rose-500' }}">
+                                    {{ $history->status }}
+                                </span>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
