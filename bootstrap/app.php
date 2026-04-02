@@ -15,4 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })
+    /* Ye wala block add karein */
+    ->withProviders([
+        \Maatwebsite\Excel\ExcelServiceProvider::class,
+    ])
+    ->create();

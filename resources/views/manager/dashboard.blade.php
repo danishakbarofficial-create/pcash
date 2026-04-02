@@ -29,8 +29,21 @@
                             <span class="mr-2">🚀</span> Submit New Expense
                         </h3>
                         
-                        <form action="{{ route('expenses.store') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+                        {{-- FIXED: Route name corrected to transactions.store --}}
+                        <form action="{{ route('transactions.store') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
                             @csrf
+
+                            {{-- FIXED: ADDED PROJECT SELECTION (Required by Controller) --}}
+                            <div>
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Project / Site</label>
+                                <select name="project_id" class="w-full bg-[#111318] border-white/10 rounded-lg text-sm text-slate-300 focus:border-[#c5a043] focus:ring-0" required>
+                                    <option value="">Select Project</option>
+                                    @foreach($projects as $project)
+                                        <option value="{{ $project->id }}">{{ strtoupper($project->name) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                             <div>
                                 <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Category</label>
                                 <select name="category_id" class="w-full bg-[#111318] border-white/10 rounded-lg text-sm text-slate-300 focus:border-[#c5a043] focus:ring-0" required>
@@ -62,7 +75,7 @@
                                 <input type="file" name="receipt_photo" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#c5a043]/10 file:text-[#c5a043]" required>
                             </div>
 
-                            <button type="submit" class="w-full bg-gradient-to-r from-[#c5a043] to-[#a38435] text-black py-3 rounded-xl font-black text-[11px] uppercase transition-all hover:opacity-90">
+                            <button type="submit" class="w-full bg-gradient-to-r from-[#c5a043] to-[#a38435] text-black py-3 rounded-xl font-black text-[11px] uppercase transition-all hover:opacity-90 shadow-lg shadow-[#c5a043]/20">
                                 Submit My Request
                             </button>
                         </form>
@@ -72,7 +85,7 @@
                 {{-- RIGHT SIDE: TABLES --}}
                 <div class="lg:col-span-2 space-y-8">
                     
-                    {{-- 1. PENDING STAFF REQUESTS (Hierarchy Filter) --}}
+                    {{-- 1. PENDING STAFF REQUESTS --}}
                     <div class="bg-[#1a1d24] rounded-2xl shadow-2xl overflow-hidden border border-white/5">
                         <div class="p-4 bg-white/[0.02] border-b border-white/5 flex justify-between items-center">
                             <h3 class="font-black text-slate-400 text-[10px] uppercase tracking-widest">Awaiting My Approval (Staff)</h3>
@@ -89,8 +102,8 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-white/5">
-                                    {{-- Filtered for pending_manager status --}}
-                                    @forelse(\App\Models\Transaction::where('status', 'pending_manager')->where('user_id', '!=', auth()->id())->get() as $expense)
+                                    {{-- Use $pendingRequests variable passed from Controller --}}
+                                    @forelse($pendingRequests ?? [] as $expense)
                                         <tr class="hover:bg-white/[0.02]">
                                             <td class="px-6 py-4">
                                                 <div class="font-bold text-slate-200">{{ $expense->user->name ?? 'Unknown' }}</div>
@@ -106,11 +119,12 @@
                                             </td>
                                             <td class="px-6 py-4 text-center">
                                                 <div class="flex justify-center gap-2">
-                                                    <form action="{{ route('manager.approve', $expense->id) }}" method="POST">
+                                                    {{-- Fixed route name to match your controller --}}
+                                                    <form action="{{ route('transactions.approve', $expense->id) }}" method="POST">
                                                         @csrf
                                                         <button class="bg-[#c5a043] text-black px-4 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-white transition-all">Approve</button>
                                                     </form>
-                                                    <form action="{{ route('admin.reject', $expense->id) }}" method="POST">
+                                                    <form action="{{ route('transactions.reject', $expense->id) }}" method="POST">
                                                         @csrf
                                                         <button class="border border-rose-500/30 text-rose-500 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-rose-500 hover:text-white transition-all">Reject</button>
                                                     </form>

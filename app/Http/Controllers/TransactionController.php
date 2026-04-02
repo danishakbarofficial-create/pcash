@@ -12,6 +12,24 @@ use Illuminate\Support\Facades\DB;
 
 class TransactionController extends Controller
 {
+
+// TransactionController.php mein ye method update karein
+public function vaultPage() 
+{
+    // 1. Vault ka current balance
+    $vault = \App\Models\Vault::first() ?: new \App\Models\Vault(['total_balance' => 0]);
+
+    // 2. Recent Cash Out (Assignments) ka data fetch karna taake blade mein error na aaye
+    $recentCashOut = \App\Models\Transaction::with('user')
+        ->where('type', 'assignment')
+        ->where('status', 'approved')
+        ->latest()
+        ->take(5)
+        ->get();
+
+    // 3. Aapki file ka path (check kar lein agar 'admin.vault-manage' hai ya 'admin.add-cash')
+    return view('admin.add-cash', compact('vault', 'recentCashOut'));
+}
     // 1. MASTER LEDGER
     public function ledger(Request $request)
     {
@@ -111,6 +129,8 @@ class TransactionController extends Controller
     return view('admin.assign-cash', compact('vault', 'users', 'recentCashOut', 'vaultLogs', 'projects'));
 }
 
+
+
     // 4.1. ASSIGN CASH
     public function assignCash(Request $request) 
     {
@@ -126,7 +146,7 @@ class TransactionController extends Controller
             $vault = Vault::first();
             
             if (!$vault || $vault->total_balance < $request->amount) {
-                throw new \Exception('Insufficient vault balance!');
+                return back()->with('error', 'Insufficient vault balance!')->withInput();
             }
 
             $path = $request->file('receiver_receipt')->store('receipts/assignments', 'public');
@@ -226,33 +246,66 @@ class TransactionController extends Controller
     // 8. REPORTING
 public function reporting(Request $request)
 {
-    $projects = Project::all();
-    
-    $staffCash = User::where('role', '!=', 'admin')
+    // 1. All Projects for Dropdown & Logic
+    $projects = \App\Models\Project::all();
+
+    // 2. Staff Cash Logic (Bar Chart) - Assignments based
+    $staffCash = \App\Models\User::where('role', '!=', 'admin')
         ->withSum(['transactions as total_received' => function($q) use ($request) {
             $q->where('type', 'assignment')->where('status', 'approved');
             if ($request->filled('project')) {
                 $q->where('project_id', $request->project);
             }
+            if ($request->filled('from_date') && $request->filled('to_date')) {
+                $q->whereBetween('transaction_date', [$request->from_date, $request->to_date]);
+            }
         }], 'amount')
         ->get();
 
-    $query = Transaction::where('type', 'expense')
-        ->where('status', 'approved');
+    // 3. Base Query for Expenses (Used by multiple charts)
+    $query = \App\Models\Transaction::where('type', 'expense')->where('status', 'approved');
 
     if ($request->filled('project')) {
         $query->where('project_id', $request->project);
     }
+    
+    if ($request->filled('from_date') && $request->filled('to_date')) {
+        $query->whereBetween('transaction_date', [$request->from_date, $request->to_date]);
+    }
 
     $filteredTransactions = $query->get();
 
-    // Yahan .whereNotNull('category') lagane se NULL keys (Assignments) hata di jayengi
-    $categoryData = $filteredTransactions
-        ->whereNotNull('category') 
-        ->groupBy('category')
-        ->map(fn($group) => $group->sum('amount'));
+    // 4. Category-wise Logic (Donut Chart)
+    $categoryData = $filteredTransactions->groupBy(function($item) {
+        // Description se [Category] extract karna
+        preg_match('/\[(.*?)\]/', $item->description, $matches);
+        return $matches[1] ?? 'General';
+    })->map(fn($group) => $group->sum('amount'));
 
-    return view('admin.reporting', compact('categoryData', 'staffCash', 'projects'));
+    // 5. Project-wise Distribution (Pie Chart)
+    $projectData = \App\Models\Project::withSum(['transactions' => function($q) use ($request) {
+        $q->where('type', 'expense')->where('status', 'approved');
+        if ($request->filled('from_date') && $request->filled('to_date')) {
+            $q->whereBetween('transaction_date', [$request->from_date, $request->to_date]);
+        }
+    }], 'amount')->get()->pluck('transactions_sum_amount', 'name');
+
+    // 6. Daily Trend Logic (Line Chart) - Last 30 Days
+    $trendData = \App\Models\Transaction::where('type', 'expense')
+        ->where('status', 'approved')
+        ->where('transaction_date', '>=', now()->subDays(30))
+        ->selectRaw('transaction_date, SUM(amount) as total')
+        ->groupBy('transaction_date')
+        ->orderBy('transaction_date')
+        ->get();
+
+    return view('admin.reporting', compact(
+        'categoryData', 
+        'staffCash', 
+        'projects', 
+        'projectData', 
+        'trendData'
+    ));
 }
     // 9. MY HISTORY
     public function myHistory()
@@ -270,4 +323,27 @@ public function reporting(Request $request)
         Transaction::findOrFail($id)->update(['status' => 'rejected']);
         return back()->with('error', 'Request has been rejected.');
     }
+
+    // TransactionController.php mein ye add karein
+public function managerDashboard() 
+{
+    // 1. Dropdown ke liye saare projects fetch karein (Yahi miss tha)
+    $projects = \App\Models\Project::all(); 
+    
+    $user = auth()->user();
+    
+    // 2. Wo requests jo is manager ke staff ne submit ki hain
+    $pendingRequests = Transaction::where('status', 'pending_manager')
+        ->whereHas('user', function($q) use ($user) {
+            $q->where('reporting_to', $user->id);
+        })->get();
+
+    // 3. Manager ki apni history
+    $myHistory = Transaction::where('user_id', $user->id)
+        ->latest()
+        ->take(10)
+        ->get();
+
+    return view('manager.dashboard', compact('projects', 'pendingRequests', 'myHistory'));
+}
 }

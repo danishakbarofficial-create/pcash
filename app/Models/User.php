@@ -18,8 +18,10 @@ class User extends Authenticatable
         'role',
         'project_name',
         'cost_center',
-        'reporting_to', // ZAROORI: Iske bagair Ali ko Farooq assign nahi kar payenge
+        'reporting_to', 
         'cash_balance', 
+        'total_spent',   // ZAROORI: Error fix karne ke liye add kiya
+        'total_received', // Behtar tracking ke liye
     ];
 
     protected $hidden = [
@@ -32,6 +34,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'cash_balance' => 'decimal:2',
+            'total_spent' => 'decimal:2',
         ];
     }
 
@@ -39,13 +43,13 @@ class User extends Authenticatable
      * HIERARCHY RELATIONSHIPS
      */
 
-    // Ali ka boss kaun hai? (Ali belongs to Farooq)
+    // Subordinate ka boss (e.g., Ali belongs to Farooq)
     public function manager()
     {
         return $this->belongsTo(User::class, 'reporting_to');
     }
 
-    // Farooq ke under kaun kaun staff hai? (Farooq has many subordinates)
+    // Boss ke under staff (e.g., Farooq has many subordinates)
     public function subordinates()
     {
         return $this->hasMany(User::class, 'reporting_to');
@@ -61,11 +65,11 @@ class User extends Authenticatable
     }
 
     /**
-     * LIVE ACCOUNTING ACCESSORS
+     * LIVE ACCOUNTING ACCESSORS (For Balances Page)
      */
 
-    // 1. Total Received: Jitna cash Admin ne assign kiya
-    public function getTotalReceivedAttribute()
+    // 1. Live Total Received calculation
+    public function getLiveReceivedAttribute()
     {
         return $this->transactions()
             ->where('type', 'assignment')
@@ -73,8 +77,8 @@ class User extends Authenticatable
             ->sum('amount');
     }
 
-    // 2. Total Spent: Approved expenses
-    public function getTotalSpentAttribute()
+    // 2. Live Total Spent calculation
+    public function getLiveSpentAttribute()
     {
         return $this->transactions()
             ->where('type', 'expense')
@@ -82,9 +86,9 @@ class User extends Authenticatable
             ->sum('amount');
     }
 
-    // 3. Calculated Balance: Live calculation
+    // 3. Calculated Balance (Live logic)
     public function getCalculatedBalanceAttribute()
     {
-        return $this->total_received - $this->total_spent;
+        return $this->live_received - $this->live_spent;
     }
 }

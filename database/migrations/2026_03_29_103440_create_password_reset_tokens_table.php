@@ -9,19 +9,19 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
- public function up(): void {
-    Schema::table('transactions', function (Blueprint $table) {
-        $table->foreignId('project_id')->nullable()->constrained('projects');
-    });
-}
+    public function up(): void
+    {
+        Schema::create('password_reset_tokens', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('password_reset_tokens');
     }
 };

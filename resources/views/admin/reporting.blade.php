@@ -50,13 +50,13 @@
                     <p class="text-[10px] text-gray-400 uppercase font-bold">Active Staff</p>
                     <p class="text-xl font-black text-white">{{ $staffCash->count() }}</p>
                 </div>
-                 <div class="bg-[#151921] p-4 rounded-xl border border-white/5 text-right">
+                <div class="bg-[#151921] p-4 rounded-xl border border-white/5 text-center">
                     <p class="text-[10px] text-gray-400 uppercase font-bold">Total Projects</p>
                     <p class="text-xl font-black text-white">{{ count($projects) }}</p>
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div class="bg-[#151921] p-6 rounded-2xl border border-white/10 shadow-2xl flex flex-col items-center">
                     <div class="w-full flex justify-between items-center mb-6">
                         <h3 class="text-white text-sm font-bold uppercase tracking-tighter">Category-wise Spending</h3>
@@ -68,9 +68,25 @@
                 </div>
 
                 <div class="bg-[#151921] p-6 rounded-2xl border border-white/10 shadow-2xl flex flex-col items-center">
-                    <h3 class="text-white text-sm font-bold uppercase mb-6 self-start tracking-tighter">Petty Cash per Staff</h3>
+                    <h3 class="text-white text-sm font-bold uppercase mb-6 self-start tracking-tighter">Petty Cash per Staff (Allocated)</h3>
                     <div class="relative w-full" style="height: 280px;">
                         <canvas id="staffChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-[#151921] p-6 rounded-2xl border border-white/10 shadow-2xl">
+                    <h3 class="text-white text-sm font-bold uppercase mb-6 tracking-tighter">30-Day Expense Trend</h3>
+                    <div class="relative w-full" style="height: 280px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-[#151921] p-6 rounded-2xl border border-white/10 shadow-2xl">
+                    <h3 class="text-white text-sm font-bold uppercase mb-6 tracking-tighter">Project-wise Consumption</h3>
+                    <div class="relative w-full" style="height: 280px;">
+                        <canvas id="projectChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -79,7 +95,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Category-wise Donut Chart
+        // 1. Category-wise Donut Chart
         const catLabels = {!! json_encode($categoryData->keys()) !!};
         const catTotals = {!! json_encode($categoryData->values()) !!};
 
@@ -98,12 +114,12 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 11 }, padding: 20, usePointStyle: true } }
+                    legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 }, usePointStyle: true } }
                 }
             }
         });
 
-        // Staff Bar Chart
+        // 2. Staff Bar Chart
         new Chart(document.getElementById('staffChart'), {
             type: 'bar',
             data: {
@@ -123,6 +139,53 @@
                     x: { grid: { display: false }, ticks: { color: '#ffffff' } }
                 },
                 plugins: { legend: { display: false } }
+            }
+        });
+
+        // 3. Trend Line Chart
+        new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: {
+                labels: {!! json_encode($trendData->pluck('transaction_date')) !!},
+                datasets: [{
+                    label: 'Daily Spending',
+                    data: {!! json_encode($trendData->pluck('total')) !!},
+                    borderColor: '#c5a043',
+                    backgroundColor: 'rgba(197, 160, 67, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280' } },
+                    x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // 4. Project-wise Pie Chart
+        new Chart(document.getElementById('projectChart'), {
+            type: 'pie',
+            data: {
+                labels: {!! json_encode($projectData->keys()) !!},
+                datasets: [{
+                    data: {!! json_encode($projectData->values()) !!},
+                    backgroundColor: ['#c5a043', '#4e4e4e', '#ffffff', '#8a6d2b', '#d4af37'],
+                    borderWidth: 2,
+                    borderColor: '#151921'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#9ca3af', font: { size: 11 }, usePointStyle: true } }
+                }
             }
         });
     </script>

@@ -12,7 +12,7 @@
                 </div>
                 <div class="flex items-center">
                     {{-- History Page Link --}}
-                    <a href="{{ route('staff.history') }}" class="group flex items-center bg-[#c5a043]/5 hover:bg-[#c5a043] border border-[#c5a043]/20 px-5 py-2.5 rounded-xl transition-all">
+                    <a href="{{ route('my.history') }}" class="group flex items-center bg-[#c5a043]/5 hover:bg-[#c5a043] border border-[#c5a043]/20 px-5 py-2.5 rounded-xl transition-all">
                         <span class="mr-2 text-lg">⏳</span>
                         <span class="text-[10px] font-black text-[#c5a043] group-hover:text-black uppercase tracking-widest">My History</span>
                     </a>
@@ -50,6 +50,17 @@
                     @csrf
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
+                        {{-- ADDED: Project Selection Field --}}
+                        <div class="md:col-span-2 space-y-2">
+                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Project / Site</label>
+                            <select name="project_id" class="w-full bg-[#111318] border-white/10 rounded-xl p-3 text-sm text-gray-200 focus:ring-2 focus:ring-[#c5a043] focus:border-[#c5a043] outline-none transition-all" required>
+                                <option value="" disabled selected>Select Project</option>
+                                @foreach($projects as $project)
+                                    <option value="{{ $project->id }}">{{ strtoupper($project->name) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         {{-- Category Field --}}
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Expense Category</label>
@@ -60,7 +71,6 @@
                                 <option value="3">🏗️ Material Purchase</option>
                                 <option value="4">🔧 Maintenance</option>
                                 <option value="5">📁 Office Expenses</option>
-                                <option value="6">📦 Others</option>
                             </select>
                         </div>
 

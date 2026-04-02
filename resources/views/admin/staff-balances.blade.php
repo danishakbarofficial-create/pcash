@@ -25,6 +25,7 @@
     <div class="py-8 bg-[#0b0c10] min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
+            {{-- Header Section --}}
             <div class="flex justify-between items-end mb-8">
                 <div>
                     <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">
@@ -32,11 +33,21 @@
                     </h2>
                     <p class="text-[9px] text-slate-500 font-bold tracking-[0.3em] uppercase mt-1">Liquidity Distribution Tracking</p>
                 </div>
-                <a href="{{ route('admin.ledger') }}" class="text-[9px] font-black text-slate-400 bg-white/5 border border-white/10 px-5 py-2 rounded-xl hover:bg-gold hover:text-black transition-all uppercase tracking-widest">
-                    ← Back to Ledger
-                </a>
+                <div class="flex gap-3">
+                    {{-- Excel Export Button for Accountant --}}
+                    <a href="{{ route('admin.export.excel', request()->all()) }}" class="text-[9px] font-black text-emerald-400 bg-emerald-500/5 border border-emerald-500/20 px-5 py-2 rounded-xl hover:bg-emerald-500 hover:text-black transition-all uppercase tracking-widest flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Export Excel
+                    </a>
+                    <a href="{{ route('admin.ledger') }}" class="text-[9px] font-black text-slate-400 bg-white/5 border border-white/10 px-5 py-2 rounded-xl hover:bg-gold hover:text-black transition-all uppercase tracking-widest">
+                        ← Back to Ledger
+                    </a>
+                </div>
             </div>
 
+            {{-- Filters Section --}}
             <div class="mvs-card p-5 mb-8 border-gold-soft/10 shadow-xl">
                 <form method="GET" action="{{ route('admin.staffBalances') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div>
@@ -65,19 +76,20 @@
                 </form>
             </div>
 
+            {{-- Portfolio Summary Card --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="mvs-card p-6 border-l-4 border-l-gold">
                     <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-1">Total Outstanding Portfolio</p>
                     <div class="flex items-baseline gap-2">
                         <span class="text-gold font-black text-lg italic">SAR</span>
                         <h2 class="text-3xl font-black text-white tracking-tighter">
-                            {{-- Summing the calculated balance of all filtered staff --}}
                             {{ number_format($staffData->sum(fn($s) => $s->calculated_balance), 2) }}
                         </h2>
                     </div>
                 </div>
             </div>
 
+            {{-- Data Table --}}
             <div class="mvs-card overflow-hidden shadow-2xl">
                 <div class="px-8 py-4 border-b border-white/5 bg-white/[0.01]">
                     <h3 class="text-[10px] font-black text-white uppercase tracking-[0.2em] flex items-center">

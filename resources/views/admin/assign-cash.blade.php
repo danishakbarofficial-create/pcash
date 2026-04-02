@@ -24,12 +24,18 @@
     <div class="py-12 bg-black min-h-screen">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
             
-            {{-- Notifications --}}
-            @if(session('success'))
-                <div class="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 font-bold rounded-2xl flex items-center italic">
-                    <span class="mr-3">✅</span> {{ session('success') }}
-                </div>
-            @endif
+            {{-- Notifications Logic --}}
+@if(session('error'))
+    {{-- Pehle Error check karein --}}
+    <div class="mb-6 p-4 bg-red-500/10 border border-red-500/20 text-red-500 font-bold rounded-2xl flex items-center italic">
+        <span class="mr-3">⚠️</span> {{ session('error') }}
+    </div>
+@elseif(session('success'))
+    {{-- Agar error nahi hai, tabhi success dikhaye --}}
+    <div class="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 font-bold rounded-2xl flex items-center italic">
+        <span class="mr-3">✅</span> {{ session('success') }}
+    </div>
+@endif
 
             <div class="bg-[#11141b] overflow-hidden shadow-2xl rounded-[2.5rem] border border-white/5 relative">
                 <div class="absolute -top-20 -right-20 w-40 h-40 bg-[#c5a043]/5 blur-[60px] rounded-full"></div>
